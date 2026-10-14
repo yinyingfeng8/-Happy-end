@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>任启町 - 个人主页</title>
+    
+    <style>
+        /* =========================================
+           1. 全局变量与主题设置
+           ========================================= */
+        :root {
+            --bg-light: #fcfbf9;
+            --text-color: #1f2937;
+            --card-bg: rgba(255, 255, 255, 0.35); 
+            --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            --border-color: rgba(255, 255, 255, 0.6);
+            --btn-bg: #1f2937;
+            --btn-text: #ffffff;
+
+            /* 底部标签栏变量 */
+            --tag-bar-bg: rgba(255, 255, 255, 0.7);
+            --tag-bar-border: rgba(255, 255, 255, 0.9);
+            --tag-bg: rgba(255, 255, 255, 0.6);
+            --tag-hover-bg: rgba(255, 184, 108, 0.3);
+            
+            --mouse-x: 0.5;
+            --mouse-y: 0.5;
+            --m-px: 50vw;
+            --m-py: 50vh;
+        }
+
+        body.dark-mode {
+            --bg-light: #0b0f19; 
+            --text-color: #f3f4f6;
+            --card-bg: rgba(20, 25, 35, 0.35); 
+            --card-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --btn-bg: #f3f4f6;
+            --btn-text: #0b0f19;
+        }
+
+        * {
+            margin: 0; padding: 0; box-sizing: border-box;
+            transition: background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease;
+        }
+
+        body {
+            background-color: var(--bg-light);
+            color: var(--text-color);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            width: 100vw; height: 100vh;
+            overflow: hidden; position: relative;
+            user-select: none;
+            transform: translateZ(0);
+        }
+
+        /* =========================================
+           2. 背景层与 RQT 大字
+           ========================================= */
+        .light-bg {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 1; opacity: 1; transition: opacity 0.8s ease; pointer-events: none;
+            will-change: opacity;
+        }
+        body.dark-mode .light-bg { opacity: 0; }
+        
+        .light-bg::before {
+            content: ''; position: absolute; width: 100vw; height: 100vh;
+            background: radial-gradient(circle at 10% 10%, rgba(255, 184, 108, 0.5) 0%, transparent 60%),
+                        radial-gradient(circle at 90% 90%, rgba(135, 206, 235, 0.4) 0%, transparent 60%);
+            filter: blur(60px); 
+            transform: translate(calc(var(--mouse-x) * 60px - 30px), calc(var(--mouse-y) * 60px - 30px));
+            transition: transform 0.2s ease-out;
+        }
+
+        .dark-bg {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 1; opacity: 0; transition: opacity 0.8s ease; pointer-events: none;
+        }
+        body.dark-mode .dark-bg { opacity: 1; }
+        
+        .star {
+            position: absolute; background-color: #fff; border-radius: 50%;
+            box-shadow: 0 0 4px #fff, 0 0 8px rgba(255, 255, 255, 0.5);
+            animation: twinkle 2s infinite alternate;
+        }
+        @keyframes twinkle {
+            0% { opacity: 0.2; }
+            100% { opacity: 1; }
+        }
+
+        /* RQT 大字 */
+        .rqt-text {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 35vw; font-weight: 900; font-family: Impact, sans-serif;
+            letter-spacing: 5vw; z-index: 2; pointer-events: none; white-space: nowrap;
+            color: transparent; -webkit-text-stroke: 2px rgba(0, 0, 0, 0.08); 
+            background-image: radial-gradient(circle 300px at var(--m-px) var(--m-py), 
+                rgba(255, 209, 148, 1) 0%, rgba(255, 184, 108, 0.6) 40%, transparent 80%);
+            -webkit-background-clip: text; background-clip: text;
+            will-change: background-image;
+        }
+        body.dark-mode .rqt-text {
+            -webkit-text-stroke: 2px rgba(255, 255, 255, 0.1);
+            background-image: radial-gradient(circle 350px at var(--m-px) var(--m-py), 
+                rgba(147, 197, 253, 1) 0%, rgba(96, 165, 250, 0.6) 40%, transparent 80%);
+        }
+
+        /* =========================================
+           3. UI组件与卡片基础样式
+           ========================================= */
+        #theme-toggle {
+            position: fixed; top: 20px; right: 20px;
+            padding: 10px 20px; border: none; border-radius: 30px;
+            background-color: var(--btn-bg); color: var(--btn-text);
+            font-size: 14px; font-weight: bold; cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 999;
+            transition: transform 0.3s ease;
+        }
+        #theme-toggle:hover { transform: scale(1.05); }
+
+        .love-text {
+            position: fixed; top: 100px; right: 25px;
+            writing-mode: vertical-rl; font-size: 12px; font-family: monospace;
+            letter-spacing: 6px; font-weight: bold;
+            background: linear-gradient(to bottom, #ff7e5f, #feb47b, #86a8e7, #91eae4);
+            -webkit-background-clip: text; background-clip: text; color: transparent;
+            z-index: 300; pointer-events: none;
+        }
+
+        .profile-card {
+            position: fixed; top: 20px; left: 20px;
+            background: transparent; z-index: 200; cursor: pointer;
+            display: flex; flex-direction: column; justify-content: center;
+            min-width: 160px; padding: 10px; color: var(--text-color);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            will-change: transform;
+        }
+        .profile-card.expanded { transform: scale(1.15); }
+        .profile-card h3 { font-size: 20px; margin-bottom: 2px; font-weight: 800; }
+        .profile-card p { font-size: 13px; opacity: 0.7; }
+        .university-logo {
+            position: absolute; top: 5px; right: -10px; width: 45px; height: 45px;
+            object-fit: contain; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.2));
+        }
+
+        /* 小车样式 */
+        .car-img {
+            position: fixed; top: 0; left: 0;
+            width: 140px; height: auto; object-fit: contain;
+            z-index: 100; pointer-events: none;
+            will-change: transform;
+            filter: drop-shadow(0 5px 10px rgba(0,0,0,0.2));
+        }
+
+        /* 卡片样式 */
+        .card {
+            position: absolute; width: 200px;
+            background-color: var(--card-bg);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-radius: 16px;
+            box-shadow: var(--card-shadow);
+            border: 1px solid var(--border-color);
+            cursor: pointer; z-index: 10;
+            will-change: transform, width, height;
+            transition: width 0.3s ease, height 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card:hover { box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); }
+
+        /* 浅色模式羽毛装饰 */
+        .card::before, .card::after {
+            content: ''; position: absolute; top: 50%; width: 20px; height: 80%;
+            transform: translateY(-50%); border-radius: 50%; pointer-events: none;
+            background: radial-gradient(ellipse at left, rgba(255,184,108,0.3), transparent 70%);
+            transition: opacity 0.5s ease;
+        }
+        .card::before { left: -10px; } .card::after { right: -10px; }
+        body.dark-mode .card::before, body.dark-mode .card::after { opacity: 0; }
+
+        /* 深色模式星星装饰 */
+        .card .star-decor-l, .card .star-decor-r {
+            position: absolute; top: 0; width: 40px; height: 100%;
+            opacity: 0; transition: opacity 0.5s ease; pointer-events: none;
+        }
+        .card .star-decor-l { left: -20px; } .card .star-decor-r { right: -20px; }
+        body.dark-mode .card .star-decor-l, body.dark-mode .card .star-decor-r { opacity: 1; }
+        
+        .card .star-decor-l::before, .card .star-decor-r::before {
+            content: ''; position: absolute; top: 20%; left: 50%;
+            width: 2px; height: 2px; background: #fff; border-radius: 50%;
+            box-shadow: 0 0 5px #fff, 0 30px #fff, 0 60px #fff, 0 90px #fff;
+            animation: twinkle 2s infinite alternate;
+        }
+
+        /* ⭐ 点击变亮效果 */
+        .card.star-bright .star-decor-l::before, 
+        .card.star-bright .star-decor-r::before {
+            box-shadow: 0 0 8px #fff, 0 0 15px #fff, 
+                        0 30px 8px #fff, 0 30px 15px #fff, 
+                        0 60px 8px #fff, 0 60px 15px #fff, 
+                        0 90px 8px #fff, 0 90px 15px #fff;
+            animation: none;
+            opacity: 1;
+        }
+
+        .card h2 { font-size: 16px; padding: 20px; color: var(--text-color); text-align: center; white-space: nowrap; }
+        .card-content {
+            max-height: 0; padding: 0 20px; opacity: 0; overflow: hidden;
+            transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
+            font-size: 14px; line-height: 1.6; color: var(--text-color); pointer-events: none;
+        }
+
+        .card.expanded {
+            width: 80vw !important; max-width: 400px;
+            position: fixed; top: 50% !important; left: 50% !important;
+            transform: translate(-50%, -50%) !important; 
+            z-index: 999; cursor: default;
+        }
+        .card.expanded h2 { border-bottom: 1px solid var(--border-color); padding-bottom: 15px; }
+        .card.expanded .card-content { max-height: 60vh; padding: 0 20px 25px 20px; opacity: 1; pointer-events: auto; }
+
+        .card.fixed-top {
+            position: fixed; top: 15px; left: 50%;
+            transform: translateX(-50%); width: auto; min-width: 150px; z-index: 500;
+        }
+        .card.fixed-top.expanded {
+            transform: translate(-50%, -50%) !important;
+        }
+
+        /* =========================================
+           4. 底部标签栏与版权信息
+           ========================================= */
+        .bottom-tags {
+            position: fixed;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            padding: 10px 18px;
+            background-color: var(--tag-bar-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 30px;
+            border: 1px solid var(--tag-bar-border);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+            z-index: 800; 
+            transition: background-color 0.5s ease, border-color 0.5s ease;
+            pointer-events: auto; 
+        }
+
+        .tag {
+            padding: 6px 14px;
+            font-size: 12px;
+            font-weight: 600;
+            border-radius: 20px;
+            background-color: var(--tag-bg);
+            color: var(--text-color);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .tag:hover {
+            background-color: var(--tag-hover-bg);
+            transform: translateY(-2px);
+        }
+
+        /* ⭐ 新增：底部版权签名 */
+        .footer-signature {
+            position: fixed;
+            bottom: 6px; /* 位于标签栏正下方 */
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 12px;
+            color: rgba(120, 120, 120, 0.8); /* 浅色模式：深灰色 */
+            z-index: 900;
+            pointer-events: none; /* 鼠标穿透，不干扰任何点击和拖拽 */
+            white-space: nowrap;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            transition: color 0.5s ease;
+        }
+
+        body.dark-mode .footer-signature {
+            color: rgba(200, 200, 200, 0.6); /* 深色模式：浅灰色 */
+        }
+
+        /* 光影特效 */
+        .light-beam {
+            position: absolute; height: 3px;
+            background: linear-gradient(90deg, rgba(255, 184, 108, 0), rgba(255, 184, 108, 0.8));
+            border-radius: 3px; transform-origin: 0 50%; pointer-events: none; z-index: 5;
+            animation: beamFadeOut 0.6s forwards;
+        }
+        @keyframes beamFadeOut { 100% { opacity: 0; transform: scaleX(1.1); } }
+
+        .click-spark {
+            position: absolute; width: 6px; height: 6px; background: #fff; border-radius: 50%;
+            pointer-events: none; animation: sparkOut 0.5s ease-out forwards; z-index: 1000;
+        }
+        body:not(.dark-mode) .click-spark { background: #ffd194; }
+        @keyframes sparkOut { 100% { transform: translate(-50%, -50%) scale(3); opacity: 0; } }
+    </style>
+</head>
+<body>
+
+    <div class="light-bg"></div>
+    <div class="dark-bg" id="star-container"></div>
+    <div class="rqt-text">R Q T</div>
+
+    <button id="theme-toggle">🌙 切换深色</button>
+    <div class="love-text">L O V E</div>
+
+    <div class="profile-card" id="profile-card">
+        <img src="./zzu-logo.png" class="university-logo" alt="郑州大学校徽">
+        <h3>刘镇铵</h3>
+        <p>请点击板块</p>
+    </div>
+
+    <img src="./car-light.png" id="car-light" class="car-img" alt="Light Car">
+    <img src="./car-dark.png" id="car-dark" class="car-img" alt="Dark Car" style="display: none;">
+
+    <div class="card">
+        <h2>任启町</h2>
+        <div class="card-content"><p>你好！这里是计算机小白，任启町是化名！可以叫我任启町。</p></div>
+        <div class="star-decor-l"></div><div class="star-decor-r"></div>
+    </div>
+
+    <div class="card fixed-top" id="card-choice">
+        <h2>小车巡航</h2>
+        <div class="card-content">
+            <p><strong>关于</strong></p>
+            <p>小车巡航就是识别摄像头所扫描到的事务，判断路面以及其他事务，是否需要规避或者前进，或者做出其他的反应，与此同时，需要按照既定路线前进。</p>
+            <p><strong>期望</strong></p>
+            <p>我认为这种识别的功能使可以运用到许多地方的，特别是人工智能识别，并反应。</p>
+        </div>
+        <div class="star-decor-l"></div><div class="star-decor-r"></div>
+    </div>
+
+    <div class="card">
+        <h2>我的经历</h2>
+        <div class="card-content"><p>关于工科方面的尝试并不是很多，主要是利用ai生成歌曲，图片制作一点网络工具，实际上效果不好。
+            也利用ai开了一个班会，许多东西都靠ai完成的，比如说部分思路，一些图片。
+            艺术方面倒是很多，画画，写小说之类。</p></div>
+        <div class="star-decor-l"></div><div class="star-decor-r"></div>
+    </div>
+
+    <div class="card">
+        <h2>我的尝试</h2>
+        <div class="card-content"><p>曾经为了写小说利用ai制作一个平台方便写作，不过当时不是很好，直接使用html制作的一个网页，而且功能之类的一些东西当时的ai也不能很好的写出来，或者说我的提示词不怎么对，也可能是我用的免费版。
+        </p></div>
+        <div class="star-decor-l"></div><div class="star-decor-r"></div>
+    </div>
+
+    <!-- 底部标签栏 -->
+    <div class="bottom-tags">
+        <div class="tag"># 小车巡航</div>
+        <div class="tag"># 软件工程</div>
+        <div class="tag"># 郑州大学</div>
+        <div class="tag"># RQT</div>
+    </div>
+
+    <!-- ⭐ 新增：底部版权信息 -->
+    <div class="footer-signature">
+        © 2026 任启町 · 用 HTML / CSS / JavaScript ai
+    </div>
+
+    <script>
+        // =======================================================
+        // 1. 主题切换与背景生成
+        // =======================================================
+        const body = document.body;
+        const toggleBtn = document.getElementById('theme-toggle');
+        const starContainer = document.getElementById('star-container');
+        const carLight = document.getElementById('car-light');
+        const carDark = document.getElementById('car-dark');
+
+        function generateStars() {
+            starContainer.innerHTML = ''; 
+            for (let i = 0; i < 80; i++) {
+                const star = document.createElement('div');
+                star.classList.add('star');
+                const size = Math.random() * 2 + 1;
+                star.style.width = `${size}px`;
+                star.style.height = `${size}px`;
+                star.style.left = `${Math.random() * 100}%`;
+                star.style.top = `${Math.random() * 100}%`;
+                star.style.animationDuration = `${Math.random() * 2 + 1}s`;
+                star.style.animationDelay = `${Math.random() * 2}s`;
+                starContainer.appendChild(star);
+            }
+        }
+        generateStars();
+
+        toggleBtn.addEventListener('click', () => {
+            body.classList.toggle('dark-mode');
+            const isDark = body.classList.contains('dark-mode');
+            toggleBtn.textContent = isDark ? '☀️ 切换浅色' : '🌙 切换深色';
+            carLight.style.display = isDark ? 'none' : 'block';
+            carDark.style.display = isDark ? 'block' : 'none';
+        });
+
+        // =======================================================
+        // 2. 鼠标事件与全局变量
+        // =======================================================
+        let isDragging = false;
+        let startBeamX, startBeamY;
+        
+        let mouseX = -1000, mouseY = -1000;
+        let currentMouseX = -1000, currentMouseY = -1000;
+        
+        document.addEventListener('mousemove', (e) => {
+            currentMouseX = e.clientX;
+            currentMouseY = e.clientY;
+        });
+
+        document.addEventListener('touchmove', (e) => {
+            if (e.touches.length > 0) {
+                currentMouseX = e.touches[0].clientX;
+                currentMouseY = e.touches[0].clientY;
+            }
+        }, { passive: true });
+
+        document.addEventListener('mousedown', (e) => {
+            if (e.target.closest('.card') || e.target.closest('.profile-card') || e.target.closest('#theme-toggle') || e.target.closest('.bottom-tags')) return;
+            isDragging = true; startBeamX = e.clientX; startBeamY = e.clientY;
+        });
+        document.addEventListener('mouseup', () => { isDragging = false; });
+        document.addEventListener('mouseleave', () => { isDragging = false; });
+
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.card') || e.target.closest('.profile-card') || e.target.closest('#theme-toggle') || e.target.closest('.bottom-tags')) return;
+            const spark = document.createElement('div');
+            spark.className = 'click-spark';
+            spark.style.left = `${e.clientX}px`; spark.style.top = `${e.clientY}px`;
+            document.body.appendChild(spark); 
+            setTimeout(() => spark.remove(), 500);
+        });
+
+        // =======================================================
+        // 3. 卡片物理引擎
+        // =======================================================
+        const cardElements = document.querySelectorAll('.card:not(.fixed-top)');
+        const items = []; 
+        let screenWidth = window.innerWidth;
+        let screenHeight = window.innerHeight;
+
+        cardElements.forEach((el, index) => {
+            const rect = el.getBoundingClientRect();
+            const width = rect.width || 200;
+            const height = rect.height || 60;
+            const radius = Math.sqrt(width * width + height * height) / 2;
+
+            const cols = 2, rows = 2;
+            const col = index % cols, row = Math.floor(index / cols);
+            const startX = (screenWidth / cols) * col + (screenWidth / (cols * 2));
+            const startY = (screenHeight / rows) * row + (screenHeight / (rows * 2));
+
+            let vx = (Math.random() - 0.5) * 1.5, vy = (Math.random() - 0.5) * 1.5;
+
+            items.push({ el, x: startX, y: startY, vx, vy, width, height, radius, isExpanded: false });
+            el.style.left = '0'; el.style.top = '0';
+            setTimeout(() => el.style.opacity = '1', 100); 
+        });
+
+        window.addEventListener('resize', () => {
+            screenWidth = window.innerWidth; screenHeight = window.innerHeight;
+        });
+
+        // =======================================================
+        // 4. 小车物理引擎 (自我漫游版)
+        // =======================================================
+        let carX = window.innerWidth / 2, carY = window.innerHeight / 2;
+        
+        let randomAngle = Math.random() * Math.PI * 2;
+        const baseCarSpeed = 1.0; 
+        
+        let carVx = Math.cos(randomAngle) * baseCarSpeed;
+        let carVy = Math.sin(randomAngle) * baseCarSpeed;
+        
+        const safeDistance = 200; 
+        const pushForce = 1.5; 
+
+        // =======================================================
+        // 5. 统一的主渲染循环
+        // =======================================================
+        function animate() {
+            // --- A. 处理鼠标数据 ---
+            mouseX = currentMouseX;
+            mouseY = currentMouseY;
+
+            if (mouseX > 0 && mouseY > 0) {
+                document.documentElement.style.setProperty('--mouse-x', mouseX / window.innerWidth);
+                document.documentElement.style.setProperty('--mouse-y', mouseY / window.innerHeight);
+                document.documentElement.style.setProperty('--m-px', `${mouseX}px`);
+                document.documentElement.style.setProperty('--m-py', `${mouseY}px`);
+            }
+
+            // 处理拖拽光束
+            if (isDragging && !body.classList.contains('dark-mode')) {
+                const dx = mouseX - startBeamX, dy = mouseY - startBeamY;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist > 40) {
+                    const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+                    const beam = document.createElement('div');
+                    beam.className = 'light-beam';
+                    beam.style.left = `${startBeamX}px`; beam.style.top = `${startBeamY}px`;
+                    beam.style.width = `${dist}px`; beam.style.transform = `rotate(${angle}deg)`;
+                    document.body.appendChild(beam);
+                    setTimeout(() => beam.remove(), 600);
+                    startBeamX = mouseX; startBeamY = mouseY;
+                }
+            }
+
+            // --- B. 小车逻辑 ---
+            const carDx = carX - mouseX, carDy = carY - mouseY;
+            const carDistSq = carDx * carDx + carDy * carDy;
+
+            if (carDistSq < safeDistance * safeDistance) {
+                const carDist = Math.sqrt(carDistSq);
+                const force = (safeDistance - carDist) / safeDistance;
+                carVx += (carDx / carDist) * force * pushForce;
+                carVy += (carDy / carDist) * force * pushForce;
+            } else {
+                const currentSpeed = Math.sqrt(carVx * carVx + carVy * carVy);
+                if (currentSpeed > baseCarSpeed) {
+                    carVx *= 0.98;
+                    carVy *= 0.98;
+                } else if (currentSpeed < baseCarSpeed && currentSpeed > 0.1) {
+                    carVx += (carVx / currentSpeed) * 0.02;
+                    carVy += (carVy / currentSpeed) * 0.02;
+                } else if (currentSpeed <= 0.1) {
+                    const randAngle = Math.random() * Math.PI * 2;
+                    carVx = Math.cos(randAngle) * baseCarSpeed;
+                    carVy = Math.sin(randAngle) * baseCarSpeed;
+                }
+            }
+
+            const maxCarSpeed = 4; 
+            const currentCarSpeedSq = carVx * carVx + carVy * carVy;
+            if (currentCarSpeedSq > maxCarSpeed * maxCarSpeed) {
+                const currentCarSpeed = Math.sqrt(currentCarSpeedSq);
+                carVx = (carVx / currentCarSpeed) * maxCarSpeed;
+                carVy = (carVy / currentCarSpeed) * maxCarSpeed;
+            }
+
+            carX += carVx;
+            carY += carVy;
+
+            if (carX < 50) { carX = 50; carVx = Math.abs(carVx); }
+            else if (carX > window.innerWidth - 50) { carX = window.innerWidth - 50; carVx = -Math.abs(carVx); }
+            if (carY < 50) { carY = 50; carVy = Math.abs(carVy); }
+            else if (carY > window.innerHeight - 50) { carY = window.innerHeight - 50; carVy = -Math.abs(carVy); }
+
+            const carAngle = Math.atan2(carVy, carVx) * (180 / Math.PI);
+            const currentCar = body.classList.contains('dark-mode') ? carDark : carLight;
+            currentCar.style.transform = `translate3d(${carX}px, ${carY}px, 0) rotate(${carAngle * 0.3}deg) translate(-50%, -50%)`;
+
+            // --- C. 卡片物理逻辑 ---
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+                if (item.isExpanded) continue;
+
+                const dxMouse = item.x - mouseX, dyMouse = item.y - mouseY;
+                const distMouseSq = dxMouse * dxMouse + dyMouse * dyMouse;
+                if (distMouseSq < 22500) {
+                    const distMouse = Math.sqrt(distMouseSq);
+                    const force = (150 - distMouse) / 150;
+                    item.vx += (dxMouse / distMouse) * force * 0.6;
+                    item.vy += (dyMouse / distMouse) * force * 0.6;
+                }
+
+                if (item.x - item.radius < 0) { item.x = item.radius; item.vx = Math.abs(item.vx); }
+                else if (item.x + item.radius > screenWidth) { item.x = screenWidth - item.radius; item.vx = -Math.abs(item.vx); }
+                if (item.y - item.radius < 0) { item.y = item.radius; item.vy = Math.abs(item.vy); }
+                else if (item.y + item.radius > screenHeight) { item.y = screenHeight - item.radius; item.vy = -Math.abs(item.vy); }
+
+                for (let j = i + 1; j < items.length; j++) {
+                    const other = items[j];
+                    if (other.isExpanded) continue;
+                    
+                    const dx = other.x - item.x, dy = other.y - item.y;
+                    const distSq = dx * dx + dy * dy;
+                    const minDist = item.radius + other.radius;
+                    
+                    if (distSq < minDist * minDist) {
+                        const dist = Math.sqrt(distSq);
+                        const nx = dx / dist, ny = dy / dist;
+                        const dvx = other.vx - item.vx, dvy = other.vy - item.vy;
+                        const dotProduct = dvx * nx + dvy * ny;
+
+                        if (dotProduct < 0) {
+                            item.vx += dotProduct * nx; item.vy += dotProduct * ny;
+                            other.vx -= dotProduct * nx; other.vy -= dotProduct * ny;
+                        }
+                        const overlap = minDist - dist;
+                        item.x -= (nx * overlap) / 2; item.y -= (ny * overlap) / 2;
+                        other.x += (nx * overlap) / 2; other.y += (ny * overlap) / 2;
+                    }
+                }
+
+                const maxSpeed = 2.5; const currentSpeedSq = item.vx * item.vx + item.vy * item.vy;
+                if (currentSpeedSq > maxSpeed * maxSpeed) {
+                    const currentSpeed = Math.sqrt(currentSpeedSq);
+                    item.vx = (item.vx / currentSpeed) * maxSpeed; 
+                    item.vy = (item.vy / currentSpeed) * maxSpeed;
+                }
+
+                item.x += item.vx; item.y += item.vy;
+                item.el.style.transform = `translate3d(${item.x - item.width / 2}px, ${item.y - item.height / 2}px, 0)`;
+            }
+            
+            requestAnimationFrame(animate);
+        }
+        
+        animate();
+
+        // =======================================================
+        // 6. 卡片点击展开/折叠与星星变亮
+        // =======================================================
+        document.querySelectorAll('.card').forEach(card => {
+            card.addEventListener('click', (e) => {
+                e.stopPropagation();
+                
+                if (card.classList.contains('fixed-top')) {
+                    if (card.classList.contains('expanded')) {
+                        card.classList.remove('expanded', 'star-bright');
+                    } else {
+                        card.classList.add('expanded', 'star-bright');
+                    }
+                    return;
+                }
+
+                const item = items.find(it => it.el === card);
+                if (item) {
+                    item.isExpanded = !item.isExpanded;
+                    if (item.isExpanded) {
+                        card.classList.add('expanded', 'star-bright');
+                        setTimeout(() => { card.classList.add('is-centered'); }, 10);
+                    } else {
+                        card.classList.remove('expanded', 'is-centered', 'star-bright');
+                    }
+                }
+            });
+        });
+
+        const profileCard = document.getElementById('profile-card');
+        profileCard.addEventListener('click', (e) => {
+            e.stopPropagation();
+            profileCard.classList.toggle('expanded');
+        });
+    </script>
+</body>
+</html>
